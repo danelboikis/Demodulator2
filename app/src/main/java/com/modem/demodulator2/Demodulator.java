@@ -155,7 +155,7 @@ public class Demodulator {
         return detectedFrequency;
     }
 
-    private static final String HANDSHAKE_MESSAGE = "01010101010101010101010101010101010101010101010";
+    private static final String HANDSHAKE_MESSAGE = "0101010101010101010101010101010101";
     public String analyzeData() {
         boolean found = false;
         int blockIn = 0;

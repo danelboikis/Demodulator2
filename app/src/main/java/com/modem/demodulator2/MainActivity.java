@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     private static final int RECORD_AUDIO_PERMISSION_REQUEST_CODE = 123;
@@ -16,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnStart;
     private Button btnStop;
     private Button btnAnalyze;
+    private TextView messageBox;
     private Demodulator demodulator;
 
     @Override
@@ -26,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
         btnStart = findViewById(R.id.btnStart);
         btnStop = findViewById(R.id.btnStop);
         btnAnalyze = findViewById(R.id.btnAnalyze);
+        messageBox = findViewById(R.id.messageBox);
 
         btnStop.setEnabled(false);
         btnAnalyze.setEnabled(false);
@@ -88,7 +91,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void analyzeRecording() {
-        Log.i("TAG2", demodulator.analyzeData());
+        String message = demodulator.analyzeData();
+        Log.i("TAG2", message);
+        messageBox.setText(message);
     }
 
     // Request the RECORD_AUDIO permission from the user
