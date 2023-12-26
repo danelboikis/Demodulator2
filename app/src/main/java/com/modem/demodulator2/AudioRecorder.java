@@ -10,22 +10,25 @@ import android.util.Log;
 import androidx.core.app.ActivityCompat;
 
 import java.util.Arrays;
+import java.util.Queue;
 
 public class AudioRecorder {
     public static final int SAMPLE_RATE = 44100;
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_8BIT;
 
+    public static final int MAX_REC_TIME = 100; // max recording time in seconds
+
     private AudioRecord audioRecord;
     private int bufferSize;
     private byte[] audioData;
 
-    private volatile int audioDataIn;
+    private int audioDataIn;
 
     private volatile boolean isRecording ;
 
     public AudioRecorder(Context context) throws Exception {
-        bufferSize = SAMPLE_RATE * 100;
+        bufferSize = SAMPLE_RATE * MAX_REC_TIME;
         Log.i("TAG1", "bufferSize: " + bufferSize);
 
         if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -63,7 +66,8 @@ public class AudioRecorder {
         audioData = new byte[bufferSize];
     }
 
-    public void startRecording() {
+
+    public void startRecording(Demodulator demodulator) {
         Log.i("TAG2", "1");
         if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
             Log.i("TAG2", "2");
@@ -71,42 +75,35 @@ public class AudioRecorder {
             isRecording = true;
 
             Log.i("TAG2", "3");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
+            audioDataIn = 0;
+            //int audioDataIn = 0;
+            while (isRecording) {
+                int bytesRead = audioRecord.read(audioData, audioDataIn, /*bufferSize - audioDataIn*/4000);
+
+                int finalAudioDataIn = audioDataIn;
+                Thread th = new Thread(() -> {
                     try {
-                        audioDataIn = 0;
-                        //int audioDataIn = 0;
-                        while (isRecording) {
-                            int bytesRead = audioRecord.read(audioData, audioDataIn, /*bufferSize - audioDataIn*/10000);
-                            audioDataIn += bytesRead;
-                            Log.i("TAG1", "bytesRead: " + bytesRead);
-                            int audioRecordState = audioRecord.getState();
-                            Log.i("TAG1", "audioRecordState good: " + (audioRecordState == AudioRecord.STATE_INITIALIZED));
-                            byte[] audioDataRead = new byte[bytesRead];
-                            System.arraycopy(audioData, audioDataIn - bytesRead, audioDataRead, 0, bytesRead);
-                            Log.i("TAG1", "audioDataRead: " + Arrays.toString(audioDataRead));
-                        }
-                    } catch (Exception e) {
-                        Log.e("TAG1", "Exception in startRecording: " + e.getMessage());
+                        demodulator.demodulate(audioData, finalAudioDataIn, bytesRead);
+                    }
+                    catch (Exception e) {
                         e.printStackTrace();
                     }
-                }
-            }).start();
+                });
 
-            /*new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    int dataRead = 0;
-                    while (isRecording) {
-                        int blockSize =
+                demodulator.addToQueue(th);
 
-                    }
-                }
-            }).start();*/
+                th.start();
+
+                audioDataIn += bytesRead;
+
+                Log.i("TAG1", "bytesRead: " + bytesRead);
+                byte[] audioDataRead = new byte[bytesRead];
+                System.arraycopy(audioData, audioDataIn - bytesRead, audioDataRead, 0, bytesRead);
+                Log.i("TAG1", "audioDataRead: " + Arrays.toString(audioDataRead));
+            }
         }
         else if (audioRecord.getState() == AudioRecord.STATE_UNINITIALIZED){
-            Log.i("TAG2", "error");
+            Log.i("TAG2", "error: audioRecord state uninitialized");
         }
     }
 

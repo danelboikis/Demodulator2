@@ -16,6 +16,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnStart;
     private Button btnStop;
     private Button btnAnalyze;
+    private Demodulator demodulator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +77,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startRecording() {
-        audioRecorder.startRecording();
+        demodulator = new Demodulator();
+        new Thread(() -> {
+            audioRecorder.startRecording(demodulator);
+        }).start();
     }
 
     private void stopRecording() {
@@ -84,13 +88,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void analyzeRecording() {
-        byte[] audioData = audioRecorder.getAudioData();
-        try {
-            Demodulator.demodulate(audioData);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        Log.i("TAG2", demodulator.analyzeData());
     }
 
     // Request the RECORD_AUDIO permission from the user
