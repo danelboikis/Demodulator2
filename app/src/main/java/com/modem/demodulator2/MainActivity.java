@@ -6,9 +6,15 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
     private static final int RECORD_AUDIO_PERMISSION_REQUEST_CODE = 123;
@@ -16,6 +22,8 @@ public class MainActivity extends AppCompatActivity {
     private Button btnStart;
     private Button btnStop;
     private Button btnAnalyze;
+    private TextView messageBox;
+    private Demodulator16Bit demodulator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
         btnStart = findViewById(R.id.btnStart);
         btnStop = findViewById(R.id.btnStop);
         btnAnalyze = findViewById(R.id.btnAnalyze);
+        messageBox = findViewById(R.id.messageBox);
 
         btnStop.setEnabled(false);
         btnAnalyze.setEnabled(false);
@@ -36,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
         Log.i("TAG1", "after requestRecordAudioPermission");
 
-        Log.i("TAG2", "permission: " + (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED));
+        Log.i("TAG1", "permission: " + (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED));
 
         try {
             audioRecorder = new AudioRecorder(this);
@@ -58,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         btnStop.setOnClickListener(v -> {
             btnStart.setEnabled(true);
             btnStop.setEnabled(false);
-            btnAnalyze.setEnabled(true);
+            //btnAnalyze.setEnabled(true);
             Log.i("TAG1", "before stopRecording");
             stopRecording();
             Log.i("TAG1", "after stopRecording");
@@ -76,7 +85,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startRecording() {
-        audioRecorder.startRecording();
+        demodulator = new Demodulator16Bit();
+        new FrequencyDetectionTask().execute();
     }
 
     private void stopRecording() {
@@ -84,13 +94,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void analyzeRecording() {
-        byte[] audioData = audioRecorder.getAudioData();
-        try {
-            Demodulator.demodulate(audioData);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        String message = demodulator.partiallyAnalyzeData();
+        Log.i("TAG2", message);
+        messageBox.setText(message);
     }
 
     // Request the RECORD_AUDIO permission from the user
@@ -107,5 +113,39 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         audioRecorder.release();
+    }
+
+    // for testing
+    public int readFromFileWithOffset(byte[] buffer, int offset, int size) throws IOException {
+        String filePath = "output.wav";
+        AssetManager assetManager = getAssets();
+        InputStream fileInputStream = assetManager.open(filePath);
+
+        // Move the file pointer to the desired offset
+        fileInputStream.skip(offset);
+
+        // Read data into the buffer starting from the specified offset
+        int bytesRead = fileInputStream.read(buffer, offset, size);
+
+        fileInputStream.close();
+
+        return bytesRead;
+    }
+
+
+
+    private class FrequencyDetectionTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... voids) {
+            audioRecorder.startRecording(demodulator);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            btnAnalyze.setEnabled(true);
+            Log.i("TAG3", "Tasks finished");
+        }
     }
 }
