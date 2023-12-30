@@ -13,7 +13,6 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -24,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnStop;
     private Button btnAnalyze;
     private TextView messageBox;
-    private Demodulator16Bit2 demodulator;
+    private Demodulator16Bit demodulator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startRecording() {
-        demodulator = new Demodulator16Bit2();
+        demodulator = new Demodulator16Bit();
         new FrequencyDetectionTask().execute();
     }
 

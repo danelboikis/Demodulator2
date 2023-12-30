@@ -1,19 +1,13 @@
 package com.modem.demodulator2;
 
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.os.Environment;
 import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +19,8 @@ public class AudioRecorder {
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
     public static final int MAX_REC_TIME = 100; // max recording time in seconds
+
+    private static final int SIZE_TO_READ_EACH_TIME = 100;
 
     private AudioRecord audioRecord;
     private int bufferSize;
@@ -70,7 +66,10 @@ public class AudioRecorder {
     }
 
     private String toDebug;
-    public void startRecording(Demodulator16Bit2 demodulator) {
+    public void startRecording(Demodulator demodulator) {
+        if (AUDIO_FORMAT != demodulator.audio_format) {
+            throw new IllegalArgumentException("audio format mismatch");
+        }
         // Specify the path to your input WAV file
         if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
             isRecording = true;
@@ -82,7 +81,7 @@ public class AudioRecorder {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             int loop = 0;
             while (isRecording) {
-                int bytesRead = audioRecord.read(audioData, audioDataIn, /*bufferSize - audioDataIn*/200);
+                int bytesRead = audioRecord.read(audioData, audioDataIn, SIZE_TO_READ_EACH_TIME);
                 Log.i("TAG2", "bytesRead: " + bytesRead);
 
 
