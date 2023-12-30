@@ -20,7 +20,7 @@ public class AudioRecorder {
 
     public static final int MAX_REC_TIME = 100; // max recording time in seconds
 
-    private static final int SIZE_TO_READ_EACH_TIME = 100;
+    private static final int SIZE_TO_READ_EACH_TIME = 1000; // working 50-100
 
     private AudioRecord audioRecord;
     private int bufferSize;
@@ -37,6 +37,8 @@ public class AudioRecorder {
         isRecording = false;
         bufferSize = SAMPLE_RATE * MAX_REC_TIME;
         audioData = new short[bufferSize];
+
+        Log.i("TAG1", "bufferSize: " + bufferSize);
 
 
         // Check for RECORD_AUDIO permission is required before initializing AudioRecord

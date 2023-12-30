@@ -5,10 +5,11 @@ import android.util.Log;
 import org.apache.commons.math3.complex.Complex;
 import org.jtransforms.fft.DoubleFFT_1D;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public abstract class Demodulator {
-    protected static final double CARRIER_FREQUENCY = 8000;
+    protected static final double CARRIER_FREQUENCY = 15000;
     protected static final double FREQUENCY_CHANGE = 1000;
 
     protected static final int DATA_RATE = 100; // time for one bit of data in ms
@@ -143,28 +144,69 @@ public abstract class Demodulator {
 
         blockIn += HANDSHAKE_MESSAGE.length() * BLOCK_SIZE; // index of message length
 
-        byte len = 0;
+        /*byte len = 0;
         for (int i = 0; i < 8; i++) {
             int val = blockValues[blockIn + i * BLOCK_SIZE] == '0' ? 0 : 1;
             len += val * Math.pow(2, 7 - i);
+        }*/
+        String byteInStr;
+        byte[] lenInBytes = new byte[4];
+        for (int i = 0; i < 4; i++) {
+            byteInStr = "";
+            for (int j = 0; j < 8; j++) {
+                byteInStr += blockValues[blockIn + j * BLOCK_SIZE];
+            }
+            lenInBytes[i] = readByte(byteInStr);
+            blockIn += 8 * BLOCK_SIZE;
         }
 
-        Log.i("TAG3", "message len: " + len);
+        int lenInInt = bytesToInt(lenInBytes);
 
-        blockIn += 8 * BLOCK_SIZE; // index of message
+        Log.i("TAG3", "message len: " + lenInInt);
 
-        return readMessage(blockIn, len);
+        return readMessage(blockIn, lenInInt);
     }
 
     protected String readMessage(int blockIn, int len) {
-        String message = "";
+        byte[] messageInBytes = new byte[len];
+        String byteInStr;
         for (int i = 0; i < len; i++) {
-            message += blockValues[blockIn + i * BLOCK_SIZE];
+            byteInStr = "";
+            for (int j = 0; j < 8; j++) {
+                byteInStr += blockValues[blockIn + j * BLOCK_SIZE];
+            }
+            messageInBytes[i] = readByte(byteInStr);
+            blockIn += 8 * BLOCK_SIZE;
         }
+
+        String message = bytesToString(messageInBytes);
 
         Log.i("TAG3", "message: " + message);
 
         return message;
+    }
+
+    protected static byte readByte(String str) {
+        if (str.length() != 8) {
+            throw new IllegalArgumentException("string length must be 8");
+        }
+        if (!str.matches("[01]+")) {
+            throw new IllegalArgumentException("string must contain only 0 and 1");
+        }
+        if (str.charAt(0) == '1') {
+            str = '0' + str.substring(1);
+            Log.e("TAG2", "had to change first char in a byte to 0 from 1");
+        }
+        return (byte) Integer.parseInt(str, 2);
+    }
+
+    public static String bytesToString(byte[] byteArray) {
+        return new String(byteArray);
+    }
+
+    public static int bytesToInt(byte[] byteArray) {
+        ByteBuffer buffer = ByteBuffer.wrap(byteArray);
+        return buffer.getInt();
     }
 
     protected static int getBlockNum(int endIndex) {
