@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnStop;
     private Button btnAnalyze;
     private TextView messageBox;
-    private Demodulator16Bit demodulator;
+    private Demodulator demodulator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
