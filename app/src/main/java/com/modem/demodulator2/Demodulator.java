@@ -9,10 +9,10 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public abstract class Demodulator {
-    protected static final double CARRIER_FREQUENCY = 15000;
-    protected static final double FREQUENCY_CHANGE = 1000;
+    protected static final double CARRIER_FREQUENCY = 13000;
+    protected static final double FREQUENCY_CHANGE = 3000;
 
-    protected static final int DATA_RATE = 100; // time for one bit of data in ms
+    protected static final int DATA_RATE = 50; // time for one bit of data in ms
     protected static final int SAMPLE_RATE = AudioRecorder.SAMPLE_RATE; // number of samples taken per second
 
     protected static final int MAX_REC_TIME = AudioRecorder.MAX_REC_TIME; // recording time in seconds
